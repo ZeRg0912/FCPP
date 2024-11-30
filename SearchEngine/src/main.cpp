@@ -3,8 +3,10 @@
 #include <Windows.h>
 
 int main() {
-    SetConsoleCP(1251);
+    std::locale::global(std::locale("Russian"));
+    std::setlocale(LC_ALL, "Russian");
     SetConsoleOutputCP(1251);
+    SetConsoleCP(1251);
 
     try {
         Application app("Config.ini");

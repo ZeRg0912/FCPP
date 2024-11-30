@@ -1,6 +1,4 @@
-#ifndef SPIDER_H
-#define SPIDER_H
-
+#pragma once
 #include "../Database/Database.h"
 #include "../Utils/URLParser.h"
 #include "../Utils/HttpUtils.h"
@@ -27,7 +25,8 @@ private:
     Database& db;
     std::string startUrl;
     int maxDepth;
-    int numThreads;
+    int numThreads; 
+    int activeWorkers = 0;
     std::vector<std::thread> threads;
     std::queue<Task> taskQueue;
     std::unordered_set<std::string> visitedUrls;
@@ -41,5 +40,3 @@ private:
     void worker();
     void addLinksToQueue(const std::vector<std::string>& links, int depth);
 };
-
-#endif // SPIDER_H

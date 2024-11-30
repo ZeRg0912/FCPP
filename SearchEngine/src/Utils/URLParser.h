@@ -1,6 +1,4 @@
-#ifndef URLPARSER_H
-#define URLPARSER_H
-
+#pragma once
 #include <string>
 #include <vector>
 
@@ -20,5 +18,3 @@ public:
     static ParsedURL parse(const std::string& url);
     static std::vector<std::string> extractLinks(const std::string& content, const std::string& baseUrl);
 };
-
-#endif // URLPARSER_H

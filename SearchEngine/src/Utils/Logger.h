@@ -1,5 +1,5 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
+#include <boost/locale.hpp>
 
 #include <string>
 #include <mutex>
@@ -13,6 +13,5 @@ public:
 
 private:
     static std::mutex logMutex;
+    static std::string UTF8_to_CP1251(const std::string& utf8);
 };
-
-#endif // LOGGER_H

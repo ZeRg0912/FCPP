@@ -1,5 +1,4 @@
 #include "Database.h"
-#include <iostream>
 
 Database::Database(const std::string& host, const std::string& port, const std::string& name,
     const std::string& user, const std::string& password)
@@ -38,7 +37,7 @@ void Database::initializeDatabase() {
 }
 
 int Database::insertDocument(const std::string& url, const std::string& content) {
-    std::string sanitizedContent = sanitizeContent(content);
+    std::string html = content;
     try {
         pqxx::connection connection(connectionString);
         pqxx::work txn(connection);
@@ -51,7 +50,7 @@ int Database::insertDocument(const std::string& url, const std::string& content)
         if (!result.empty()) {
             int documentId = result[0][0].as<int>();
             txn.exec(
-                "UPDATE documents SET content = " + txn.quote(sanitizedContent) +
+                "UPDATE documents SET content = " + txn.quote(html) +
                 " WHERE id = " + txn.quote(documentId) + ";"
             );
             txn.commit();
@@ -61,7 +60,7 @@ int Database::insertDocument(const std::string& url, const std::string& content)
         // Вставка нового документа
         result = txn.exec(
             "INSERT INTO documents (url, content) "
-            "VALUES (" + txn.quote(url) + ", " + txn.quote(sanitizedContent) + ") "
+            "VALUES (" + txn.quote(url) + ", " + txn.quote(html) + ") "
             "RETURNING id;"
         );
 
@@ -101,15 +100,49 @@ void Database::insertWords(const std::vector<std::pair<std::string, int>>& wordF
     }
 }
 
-std::string Database::sanitizeContent(const std::string& content) {
-    std::string sanitized;
-    for (unsigned char c : content) {
-        if (c >= 0x20 || c == '\n' || c == '\t') {
-            sanitized += c;
+std::vector<std::pair<std::string, int>> Database::getRankedDocuments(const std::vector<std::string>& words) {
+    std::vector<std::pair<std::string, int>> results;
+
+    try {
+        pqxx::connection connection(connectionString);
+        pqxx::work txn(connection);
+
+        std::ostringstream wordCondition;
+        for (size_t i = 0; i < words.size(); ++i) {
+            if (i > 0) wordCondition << " OR ";
+
+            std::string utf8Word;
+            try {
+                utf8Word = boost::locale::conv::to_utf<char>(words[i], "Windows-1251");
+            }
+            catch (const std::exception& e) {
+                Logger::logError("Error converting word to UTF-8: " + std::string(e.what()));
+                utf8Word = words[i];
+            }
+
+            wordCondition << "w.word = " << txn.quote(utf8Word);
         }
-        else {
-            sanitized += ' ';
+
+        std::string query =
+            "SELECT d.url, SUM(w.frequency) AS total_relevance "
+            "FROM documents d "
+            "JOIN words w ON d.id = w.document_id "
+            "WHERE " + wordCondition.str() +
+            " GROUP BY d.url "
+            "ORDER BY total_relevance DESC "
+            "LIMIT 10;";
+
+        pqxx::result result = txn.exec(query);
+
+        for (const auto& row : result) {
+            std::string url = row["url"].as<std::string>();
+            int relevance = row["total_relevance"].as<int>();
+            results.emplace_back(url, relevance);
         }
     }
-    return sanitized;
+    catch (const std::exception& e) {
+        Logger::logError("Error fetching ranked documents: " + std::string(e.what()));
+    }
+
+    return results;
 }

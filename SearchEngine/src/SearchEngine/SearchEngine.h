@@ -1,6 +1,4 @@
-#ifndef SEARCHENGINE_H
-#define SEARCHENGINE_H
-
+#pragma once
 #include "../Utils/Logger.h"
 
 #include <boost/asio.hpp>
@@ -22,5 +20,3 @@ private:
 
     void handleRequest(boost::asio::ip::tcp::socket socket);
 };
-
-#endif // SEARCHENGINE_H

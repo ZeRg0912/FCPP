@@ -60,3 +60,32 @@ std::string Config::get(const std::string& key) const {
     }
     throw std::runtime_error("Config key not found: " + key);
 }
+
+void Config::validateConfig() const {
+    const std::vector<std::string> requiredKeys = {
+        "spider.start_url",
+        "spider.recursion_depth",
+        "server.server_port",
+        "database.db_host",
+        "database.db_port",
+        "database.db_name",
+        "database.db_user",
+        "database.db_password"
+    };
+
+    for (const auto& key : requiredKeys) {
+        if (settings.find(key) == settings.end()) {
+            throw std::runtime_error("Missing configuration key: " + key);
+        }
+    }
+
+    int recursionDepth = std::stoi(get("spider.recursion_depth"));
+    if (recursionDepth <= 0) {
+        throw std::runtime_error("Invalid recursion depth: must be > 0");
+    }
+
+    int serverPort = std::stoi(get("server.server_port"));
+    if (serverPort <= 1024 || serverPort > 65535) {
+        throw std::runtime_error("Invalid server port: must be between 1025 and 65535");
+    }
+}

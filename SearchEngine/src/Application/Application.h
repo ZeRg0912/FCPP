@@ -1,6 +1,4 @@
-#ifndef APPLICATION_H
-#define APPLICATION_H
-
+#pragma once
 #include "../Utils/Config.h"
 #include "../Utils/Logger.h"
 #include "../Database/Database.h"
@@ -12,6 +10,7 @@ class Application {
 public:
     Application(const std::string& configFile);
     void run();
+    void runInteractiveSearch();
 
 private:
     Config config;
@@ -22,5 +21,3 @@ private:
 
     void startSpider();
 };
-
-#endif // APPLICATION_H

@@ -1,12 +1,9 @@
-#ifndef HTTPUTILS_H
-#define HTTPUTILS_H
-
+#pragma once
 #include "URLParser.h"
+#include <boost/locale.hpp>
 #include <string>
 
 class HTTPUtils {
 public:
     static std::string fetchPage(const ParsedURL& url);
 };
-
-#endif // HTTPUTILS_H

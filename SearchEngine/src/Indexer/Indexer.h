@@ -1,6 +1,4 @@
-#ifndef INDEXER_H
-#define INDEXER_H
-
+#pragma once
 #include <string>
 #include <vector>
 
@@ -10,7 +8,4 @@ public:
 
 private:
     std::string removeHtmlTags(const std::string& content);
-    std::wstring cleanUtf8String(const std::wstring& input);
 };
-
-#endif // INDEXER_H
