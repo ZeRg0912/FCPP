@@ -1,0 +1,8 @@
+TESTED ON:
+
+standart_c++ == 20
+libpqxx == 7.9.2
+boost == 1_86_0
+openSSL == 3.4.0
+
+All libs/packages installed on C:/Program Files/
