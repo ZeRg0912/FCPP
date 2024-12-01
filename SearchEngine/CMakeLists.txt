@@ -53,7 +53,47 @@ set(HEADERS
     ${SRC_DIR}/Application/Application.h
 )
 
+# Исходные файлы только поисковика
+set(SEARCH_SOURCES
+    ${SRC_DIR}/main_search.cpp
+
+    ${SRC_DIR}/Database/Database.cpp
+
+    ${SRC_DIR}/Indexer/Indexer.cpp
+
+    ${SRC_DIR}/Utils/Config.cpp
+    ${SRC_DIR}/Utils/URLParser.cpp
+    ${SRC_DIR}/Utils/HTTPUtils.cpp
+    ${SRC_DIR}/Utils/Logger.cpp
+
+    ${SRC_DIR}/Spider/Spider.cpp
+
+    ${SRC_DIR}/SearchEngine/SearchEngine.cpp
+
+    ${SRC_DIR}/Application/Application.cpp
+)
+
+# Заголовочные файлы
+set(SEARCH_HEADERS
+    ${SRC_DIR}/Database/Database.h
+
+    ${SRC_DIR}/Indexer/Indexer.h
+
+    ${SRC_DIR}/Utils/Config.h
+    ${SRC_DIR}/Utils/URLParser.h
+    ${SRC_DIR}/Utils/HTTPUtils.h
+    ${SRC_DIR}/Utils/Logger.h
+
+    ${SRC_DIR}/Spider/Spider.h
+
+    ${SRC_DIR}/SearchEngine/SearchEngine.h
+
+    ${SRC_DIR}/Application/Application.h
+)
+
 add_executable(SpiderSearchEngine ${SOURCES} ${HEADERS})
+target_compile_definitions(SpiderSearchEngine PRIVATE FULL_PROJECT_MODE)
+add_executable(SearchOnly         ${SEARCH_SOURCES} ${SEARCH_HEADERS})
 
 # ------------------------------------------------------------------------
 # Политика CMP0144 для подавления предупреждений
@@ -69,6 +109,7 @@ set (LIBPQXX_DIR "${LIBS_DIR}/libpqxx-7.9.2")
 add_subdirectory(${LIBPQXX_DIR} build_libpqxx)
 
 target_link_libraries(SpiderSearchEngine PRIVATE pqxx)
+target_link_libraries(SearchOnly PRIVATE pqxx)
 
 # -----------------------------------------------------------------------------
 # Подключение Boost
@@ -81,6 +122,9 @@ find_package(Boost REQUIRED)
 if (Boost_FOUND)
     target_include_directories(SpiderSearchEngine PRIVATE ${Boost_INCLUDE_DIRS})
     target_link_directories(SpiderSearchEngine PRIVATE ${BOOST_LIBRARYDIR})
+
+    target_include_directories(SearchOnly PRIVATE ${Boost_INCLUDE_DIRS})
+    target_link_directories(SearchOnly PRIVATE ${BOOST_LIBRARYDIR})
 else()
     message(FATAL_ERROR "Boost not found!")
 endif()
@@ -93,12 +137,18 @@ find_package(OpenSSL REQUIRED)
 if (OpenSSL_FOUND)
     target_include_directories(SpiderSearchEngine PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SpiderSearchEngine PRIVATE ${OPENSSL_LIBRARIES})
+    
+    target_include_directories(SearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(SearchOnly PRIVATE ${OPENSSL_LIBRARIES})
 else()
     set(OPENSSL_INCLUDE_DIR "${EXT_OPENSSL_DIR}/include")
     set(OPENSSL_CRYPTO_LIBRARY "${EXT_OPENSSL_DIR}/lib/VC/x64/MDd/libcrypto.lib")
     set(OPENSSL_SSL_LIBRARY "${EXT_OPENSSL_DIR}/lib/VC/x64/MDd/libssl.lib")
     target_include_directories(SpiderSearchEngine PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SpiderSearchEngine PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+    
+    target_include_directories(SearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(SearchOnly PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
 endif()
 
 # -----------------------------------------------------------------------------

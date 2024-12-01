@@ -1,4 +1,16 @@
 #pragma once
+#include <boost/regex.hpp>
+#include <boost/locale.hpp>
+
+#include "../Utils/Logger.h"
+
+#include <iostream>
+#include <regex>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+#include <sstream>
+#include <codecvt>
 #include <string>
 #include <vector>
 

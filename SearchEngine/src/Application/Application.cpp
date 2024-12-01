@@ -1,5 +1,4 @@
 #include "Application.h"
-#include <iostream>
 
 Application::Application(const std::string& configFile)
     : config(configFile),
@@ -17,7 +16,9 @@ Application::Application(const std::string& configFile)
     ),
     searchEngine(std::stoi(config.get("server.server_port"))) {
     config.validateConfig();
+    #ifdef FULL_PROJECT_MODE
     Logger::log("Application initialized with config file: " + configFile);
+    #endif
 }
 
 void Application::run() {
@@ -46,7 +47,6 @@ void Application::run() {
     }
 }
 
-
 void Application::startSpider() {
     try {
         Logger::log("Starting Spider...");
@@ -59,11 +59,14 @@ void Application::startSpider() {
 
 void Application::runInteractiveSearch() {
     while (true) {
-        std::cout << "Enter your search query (or 0 to exit): ";
+        std::cout << "\033[1;33m"
+            << "Enter your search query (or type /exit_search to exit): "
+            << "\033[0m";
+
         std::string query;
         std::getline(std::cin, query);
 
-        if (query == "0") break;
+        if (query == "/exit_search") break;
 
         std::istringstream stream(query);
         std::vector<std::string> words;
@@ -72,17 +75,22 @@ void Application::runInteractiveSearch() {
             words.push_back(word);
         }
 
-        // Передаём слова в функцию поиска
         auto results = db.getRankedDocuments(words);
 
         if (results.empty()) {
-            Logger::logError("No results found for your query.");
+            Logger::logError("No results found.");
         }
         else {
             Logger::logInfo("Search results:");
+            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+            std::cout << std::left << std::setw(50) << "URL" << std::setw(10) << "Relevance" << std::endl;
+            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+
             for (const auto& [url, relevance] : results) {
-                Logger::log("URL: " + url + " | Relevance: " + std::to_string(relevance));
+                std::cout << std::left << std::setw(50) << url << std::setw(10) << relevance << std::endl;
             }
+
+            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
         }
     }
 }

@@ -1,7 +1,4 @@
 #include "SearchEngine.h"
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <iostream>
 
 namespace beast = boost::beast;
 namespace http = beast::http;

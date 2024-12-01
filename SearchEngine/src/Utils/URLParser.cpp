@@ -1,6 +1,4 @@
 #include "URLParser.h"
-#include <regex>
-#include <stdexcept>
 
 ParsedURL URLParser::parse(const std::string& url) {
     const std::regex urlRegex(R"(^(https?)://([^/]+)(/?.*)$)");

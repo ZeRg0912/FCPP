@@ -1,8 +1,12 @@
 #pragma once
 #include "../Utils/Logger.h"
 
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/asio.hpp>
+
 #include <thread>
+#include <iostream>
 
 class SearchEngine {
 public:

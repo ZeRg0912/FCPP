@@ -1,8 +1,4 @@
 #include "Config.h"
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
 
 Config::Config(const std::string& configFilePath) {
     parseConfigFile(configFilePath);
@@ -18,16 +14,13 @@ void Config::parseConfigFile(const std::string& configFilePath) {
     std::string currentSection;
 
     while (std::getline(file, line)) {
-        // Убираем пробелы в начале и конце строки
         line.erase(0, line.find_first_not_of(" \t"));
         line.erase(line.find_last_not_of(" \t") + 1);
 
-        // Игнорируем пустые строки и комментарии
         if (line.empty() || line[0] == ';' || line[0] == '#') {
             continue;
         }
 
-        // Обработка секции
         if (line[0] == '[' && line.back() == ']') {
             currentSection = line.substr(1, line.size() - 2);
         }
@@ -55,7 +48,9 @@ void Config::parseConfigFile(const std::string& configFilePath) {
 std::string Config::get(const std::string& key) const {
     auto it = settings.find(key);
     if (it != settings.end()) {
-        std::cout << "Accessing config: " << key << " = " << it->second << std::endl;
+    #ifdef FULL_PROJECT_MODE
+    std::cout << "Accessing config: " << key << " = " << it->second << std::endl;
+    #endif
         return it->second;
     }
     throw std::runtime_error("Config key not found: " + key);

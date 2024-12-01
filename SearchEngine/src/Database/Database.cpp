@@ -28,7 +28,9 @@ void Database::initializeDatabase() {
         );
 
         txn.commit();
-        std::cout << "Database initialized successfully.\n";
+        #ifdef FULL_PROJECT_MODE
+        Logger::log("Database initialized successfully.");
+        #endif
     }
     catch (const std::exception& e) {
         Logger::logError("Failed to initialize database: " + std::string(e.what()));

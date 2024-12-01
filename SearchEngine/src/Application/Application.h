@@ -4,6 +4,8 @@
 #include "../Database/Database.h"
 #include "../Spider/Spider.h"
 #include "../SearchEngine/SearchEngine.h"
+
+#include <iostream>
 #include <thread>
 
 class Application {

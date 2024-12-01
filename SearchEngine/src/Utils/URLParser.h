@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <regex>
+#include <stdexcept>
 
 enum class ProtocolType {
     HTTP,

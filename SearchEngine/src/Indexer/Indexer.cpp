@@ -1,16 +1,5 @@
     #include "Indexer.h"
 
-    #include <boost/regex.hpp>
-    #include <boost/locale.hpp>
-
-    #include <iostream>
-    #include <regex>
-    #include <unordered_map>
-    #include <vector>
-    #include <algorithm>
-    #include <sstream>
-    #include <codecvt>
-
     std::vector<std::pair<std::string, int>> Indexer::index(const std::string& content) {
         std::string cleanedContent = removeHtmlTags(content);
 
