@@ -109,10 +109,17 @@ std::vector<std::pair<std::string, int>> Database::getRankedDocuments(const std:
         pqxx::connection connection(connectionString);
         pqxx::work txn(connection);
 
-        std::ostringstream wordCondition;
-        for (size_t i = 0; i < words.size(); ++i) {
-            if (i > 0) wordCondition << " OR ";
+        // Формируем запрос с использованием IN
+        std::ostringstream query;
+        query << "SELECT d.url, SUM(w.frequency) AS total_relevance "
+            << "FROM documents d "
+            << "JOIN words w ON d.id = w.document_id "
+            << "WHERE w.word IN (";
 
+        for (size_t i = 0; i < words.size(); ++i) {
+            if (i > 0) query << ", ";
+
+            // Конвертируем слово в UTF-8
             std::string utf8Word;
             try {
                 utf8Word = boost::locale::conv::to_utf<char>(words[i], "Windows-1251");
@@ -122,20 +129,17 @@ std::vector<std::pair<std::string, int>> Database::getRankedDocuments(const std:
                 utf8Word = words[i];
             }
 
-            wordCondition << "w.word = " << txn.quote(utf8Word);
+            query << txn.quote(utf8Word);
         }
 
-        std::string query =
-            "SELECT d.url, SUM(w.frequency) AS total_relevance "
-            "FROM documents d "
-            "JOIN words w ON d.id = w.document_id "
-            "WHERE " + wordCondition.str() +
-            " GROUP BY d.url "
-            "ORDER BY total_relevance DESC "
-            "LIMIT 10;";
+        query << ") GROUP BY d.url "
+            << "ORDER BY total_relevance DESC "
+            << "LIMIT 10;";
 
-        pqxx::result result = txn.exec(query);
+        // Выполняем запрос
+        pqxx::result result = txn.exec(query.str());
 
+        // Обрабатываем результаты
         for (const auto& row : result) {
             std::string url = row["url"].as<std::string>();
             int relevance = row["total_relevance"].as<int>();

@@ -14,11 +14,11 @@ Application::Application(const std::string& configFile)
         config.get("spider.start_url"),
         std::stoi(config.get("spider.recursion_depth"))
     ),
-    searchEngine(std::stoi(config.get("server.server_port"))) {
+    searchEngine(std::make_shared<SearchEngine>(db, std::stoi(config.get("server.server_port")))) {
     config.validateConfig();
-    #ifdef FULL_PROJECT_MODE
+#ifdef FULL_PROJECT_MODE
     Logger::log("Application initialized with config file: " + configFile);
-    #endif
+#endif
 }
 
 void Application::run() {
@@ -26,15 +26,19 @@ void Application::run() {
         std::cout << "Application started." << std::endl;
 
         spiderThread = std::thread(&Application::startSpider, this);
-        std::thread serverThread(&SearchEngine::run, &searchEngine);
+
+        serverThread = std::thread(&SearchEngine::run, searchEngine.get());
 
         if (spiderThread.joinable()) {
             spiderThread.join();
         }
 
-        runInteractiveSearch();
+        Logger::log("Spider completed. Search Engine is running at: http://localhost:" + config.get("server.server_port"));
 
-        searchEngine.stop();
+        Logger::log("Press Enter to stop the server...");
+        std::cin.get();
+
+        searchEngine->stop();
 
         if (serverThread.joinable()) {
             serverThread.join();
@@ -57,40 +61,60 @@ void Application::startSpider() {
     }
 }
 
-void Application::runInteractiveSearch() {
-    while (true) {
-        std::cout << "\033[1;33m"
-            << "Enter your search query (or type /exit_search to exit): "
-            << "\033[0m";
+void Application::ConsoleSearch() {
+    try {
+        while (true) {
+            std::cout << "\033[1;33m"
+                << "Enter your search query (or type /exit_search to exit): "
+                << "\033[0m";
 
-        std::string query;
-        std::getline(std::cin, query);
+            std::string query;
+            std::getline(std::cin, query);
 
-        if (query == "/exit_search") break;
+            if (query == "/exit_search") break;
 
-        std::istringstream stream(query);
-        std::vector<std::string> words;
-        std::string word;
-        while (stream >> word) {
-            words.push_back(word);
-        }
-
-        auto results = db.getRankedDocuments(words);
-
-        if (results.empty()) {
-            Logger::logError("No results found.");
-        }
-        else {
-            Logger::logInfo("Search results:");
-            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
-            std::cout << std::left << std::setw(50) << "URL" << std::setw(10) << "Relevance" << std::endl;
-            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
-
-            for (const auto& [url, relevance] : results) {
-                std::cout << std::left << std::setw(50) << url << std::setw(10) << relevance << std::endl;
+            std::istringstream stream(query);
+            std::vector<std::string> words;
+            std::string word;
+            while (stream >> word) {
+                words.push_back(word);
             }
 
-            std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+            auto results = db.getRankedDocuments(words);
+
+            if (results.empty()) {
+                Logger::logError("No results found.");
+            }
+            else {
+                Logger::logInfo("Search results:");
+                std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+                std::cout << std::left << std::setw(50) << "URL" << std::setw(10) << "Relevance" << std::endl;
+                std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+
+                for (const auto& [url, relevance] : results) {
+                    std::cout << std::left << std::setw(50) << url << std::setw(10) << relevance << std::endl;
+                }
+
+                std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+            }
         }
+    }
+    catch (const std::exception& e) {
+        Logger::logError("Error in loop console search: " + std::string(e.what()));
+    }
+}
+
+void Application::HTMLSearch() {
+    try {
+        Logger::log("Starting Search Engine only. Access it at: http://localhost:" + config.get("server.server_port"));
+
+        serverThread = std::thread(&SearchEngine::run, searchEngine.get());
+
+        if (serverThread.joinable()) {
+            serverThread.join();
+        }
+    }
+    catch (const std::exception& e) {
+        Logger::logError("Error running HTML Search Engine: " + std::string(e.what()));
     }
 }

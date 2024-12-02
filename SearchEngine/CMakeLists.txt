@@ -53,47 +53,9 @@ set(HEADERS
     ${SRC_DIR}/Application/Application.h
 )
 
-# Исходные файлы только поисковика
-set(SEARCH_SOURCES
-    ${SRC_DIR}/main_search.cpp
-
-    ${SRC_DIR}/Database/Database.cpp
-
-    ${SRC_DIR}/Indexer/Indexer.cpp
-
-    ${SRC_DIR}/Utils/Config.cpp
-    ${SRC_DIR}/Utils/URLParser.cpp
-    ${SRC_DIR}/Utils/HTTPUtils.cpp
-    ${SRC_DIR}/Utils/Logger.cpp
-
-    ${SRC_DIR}/Spider/Spider.cpp
-
-    ${SRC_DIR}/SearchEngine/SearchEngine.cpp
-
-    ${SRC_DIR}/Application/Application.cpp
-)
-
-# Заголовочные файлы
-set(SEARCH_HEADERS
-    ${SRC_DIR}/Database/Database.h
-
-    ${SRC_DIR}/Indexer/Indexer.h
-
-    ${SRC_DIR}/Utils/Config.h
-    ${SRC_DIR}/Utils/URLParser.h
-    ${SRC_DIR}/Utils/HTTPUtils.h
-    ${SRC_DIR}/Utils/Logger.h
-
-    ${SRC_DIR}/Spider/Spider.h
-
-    ${SRC_DIR}/SearchEngine/SearchEngine.h
-
-    ${SRC_DIR}/Application/Application.h
-)
-
 add_executable(SpiderSearchEngine ${SOURCES} ${HEADERS})
 target_compile_definitions(SpiderSearchEngine PRIVATE FULL_PROJECT_MODE)
-add_executable(SearchOnly         ${SEARCH_SOURCES} ${SEARCH_HEADERS})
+add_executable(SearchOnly         ${SOURCES} ${HEADERS})
 
 # ------------------------------------------------------------------------
 # Политика CMP0144 для подавления предупреждений
@@ -155,12 +117,19 @@ endif()
 # Копируем Config к билду проекта
 # -----------------------------------------------------------------------------
 set(CONFIG_FILE "${CMAKE_SOURCE_DIR}/Config.ini")
+set(HTML_FILE "${SRC_DIR}/SearchEngine/search_form.html")
 set(CONFIG_DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
 add_custom_command(
-    TARGET SpiderSearchEngine POST_BUILD                            # Adds a post-build event to MyTest
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different                   # which executes "cmake - E copy_if_different..."
+    TARGET SpiderSearchEngine POST_BUILD                            
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different                   
         ${CONFIG_FILE} $<TARGET_FILE_DIR:SpiderSearchEngine>                       
+)
+
+add_custom_command(
+    TARGET SpiderSearchEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${HTML_FILE} $<TARGET_FILE_DIR:SpiderSearchEngine>
 )
 
 # -----------------------------------------------------------------------------

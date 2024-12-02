@@ -10,9 +10,16 @@ int main() {
 
     try {
         Application app("Config.ini");
+
+        #ifdef FULL_PROJECT_MODE
         app.run();
+        #else
+        app.ConsoleSearch();
+        #endif
+
         return 0;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }

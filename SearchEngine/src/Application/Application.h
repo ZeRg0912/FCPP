@@ -11,15 +11,18 @@
 class Application {
 public:
     Application(const std::string& configFile);
+
     void run();
-    void runInteractiveSearch();
+    void ConsoleSearch();
+    void HTMLSearch();
 
 private:
     Config config;
     Database db;
     Spider spider;
-    SearchEngine searchEngine;
+    std::shared_ptr<SearchEngine> searchEngine;
     std::thread spiderThread;
+    std::thread serverThread;
 
     void startSpider();
 };
