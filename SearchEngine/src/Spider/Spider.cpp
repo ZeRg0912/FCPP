@@ -115,13 +115,7 @@ void Spider::worker() {
                     auto links = URLParser::extractLinks(content, task.url);
 
                     {
-                        std::lock_guard<std::mutex> lock(queueMutex);
-                        for (const auto& link : links) {
-                            if (visitedUrls.find(link) == visitedUrls.end()) {
-                                taskQueue.push({ link, task.depth + 1 });
-                            }
-                        }
-
+                        addLinksToQueue(links, task.depth + 1);
                         Logger::logInfo("Total links in queue: " + std::to_string(taskQueue.size()));
                     }
 
@@ -146,7 +140,6 @@ void Spider::worker() {
         Logger::logError("Error in spider worker" + std::string(e.what()));
     }
 }
-
 
 void Spider::addLinksToQueue(const std::vector<std::string>& links, int depth) {
     try {

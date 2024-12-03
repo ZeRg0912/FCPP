@@ -1,5 +1,32 @@
 #include "SearchEngine.h"
 
+std::string URLDecode(const std::string& encoded) {
+    std::string res;
+    size_t i = 0;
+
+    while (i < encoded.size()) {
+        if (encoded[i] == '%') {
+            if (i + 2 < encoded.size() && isxdigit(encoded[i + 1]) && isxdigit(encoded[i + 2])) {
+                int hex = 0;
+                std::istringstream(encoded.substr(i + 1, 2)) >> std::hex >> hex;
+                res += static_cast<char>(hex);
+                i += 3; // Пропускаем '%xx'
+            } else {
+                res += '%';
+                i++;
+            }
+        } else if (encoded[i] == '+') {
+            res += ' '; // '+' в URL-кодировке означает пробел
+            i++;
+        } else {
+            res += encoded[i];
+            i++;
+        }
+    }
+
+    return res;
+}
+
 SearchEngine::SearchEngine(Database& db, int port)
     : db(db), port(port), acceptor(ioContext, tcp::endpoint(tcp::v4(), port)),
     deadline_(ioContext), socket_(ioContext) {}
@@ -35,7 +62,7 @@ void SearchEngine::doAccept() {
                 }
                 else {
                     // Логируем как информационную ошибку, если это просто отсутствие нового подключения
-                    Logger::logInfo("No new connections. Error accepting connection: " + ec.message());
+                    //Logger::logInfo("No new connections. Error accepting connection: " + ec.message());
                 }
             }
             doAccept(); // Повторный вызов для принятия новых соединений
@@ -45,7 +72,6 @@ void SearchEngine::doAccept() {
         }
         });
 }
-
 
 void SearchEngine::stop() {
     try {
@@ -70,7 +96,6 @@ void SearchEngine::stop() {
         Logger::logError("Error stopping search engine: " + std::string(e.what()));
     }
 }
-
 
 void SearchEngine::checkDeadline() {
     auto self = shared_from_this();
@@ -121,6 +146,8 @@ void SearchEngine::writeResponse() {
 void SearchEngine::readRequest() {
     auto self = shared_from_this();
 
+    request_ = {};
+
     http::async_read(socket_, buffer_, request_, [self](beast::error_code ec, std::size_t bytes_transferred) {
         boost::ignore_unused(bytes_transferred);
         if (!ec) {
@@ -144,79 +171,78 @@ void SearchEngine::processRequest() {
         Logger::log("Request method: " + std::to_string(static_cast<int>(request_.method())));
         Logger::log("Request target: " + std::string(request_.target()));
 
-        // Обработка запроса на favicon.ico
-        if (request_.method() == http::verb::get && request_.target() == "/favicon.ico") {
-            Logger::log("Favicon request received.");
-            response_.result(http::status::ok);
-            response_.body() = ""; // Пустой ответ на запрос favicon.ico
-            writeResponse();
-            return; // Закрываем обработку, возвращаем пустой ответ
-        }
+        std::string htmlContent;
+        std::string query;
+        std::string resultsHtml;
 
-        // Обработка запроса на главную страницу (GET /)
-        if (request_.method() == http::verb::get && request_.target() == "/") {
-            std::ifstream file("search_form.html");
-            if (!file.is_open()) {
-                Logger::logError("Failed to open search_form.html");
-                response_.result(http::status::internal_server_error);
-                response_.body() = "<html><body><h1>500 Internal Server Error</h1></body></html>";
-            }
-            else {
-                std::string htmlContent((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-                response_.result(http::status::ok);
-                response_.set(http::field::content_type, "text/html");
-                response_.body() = htmlContent;
-            }
+        // Загружаем HTML-шаблон
+        std::ifstream file("search_form.html");
+        if (!file.is_open()) {
+            Logger::logError("Failed to open search_form.html");
+            response_.result(http::status::internal_server_error);
+            response_.body() = "<html><body><h1>500 Internal Server Error</h1></body></html>";
+            writeResponse();
+            return;
         }
-        else if (request_.method() == http::verb::post) {
-            // Обработка POST-запроса
-            Logger::log("Processing POST request...");
+        htmlContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+        if (request_.method() == http::verb::post) {
+            Logger::log("POST request received. Processing search query...");
             Logger::log("Request body: " + request_.body());
 
             // Извлечение параметра query
             std::string body = request_.body();
-            std::string query;
             auto pos = body.find("query=");
             if (pos != std::string::npos) {
                 query = body.substr(pos + 6);
+                query = URLDecode(query); // Декодируем URL-символы
                 Logger::log("Extracted query: " + query);
             }
-            else {
-                Logger::logError("Query parameter not found in request body.");
-                response_.result(http::status::bad_request);
-                response_.body() = "<html><body><h1>400 Bad Request</h1><p>Missing query parameter.</p></body></html>";
-                writeResponse();
-                return;
-            }
 
-            // Обработка запроса
+            // Разбор запроса
             std::vector<std::string> words;
             std::istringstream stream(query);
             for (std::string word; stream >> word;) {
                 word.erase(remove_if(word.begin(), word.end(), ispunct), word.end());
-                words.push_back(word);
+                try {
+                    word = boost::locale::conv::from_utf(word, "Windows-1251");
+                }
+                catch (const std::exception& e) {
+                    Logger::logError("Error converting word to Windows-1251: " + std::string(e.what()));
+                }
+                if (!word.empty()) {
+                    words.push_back(word);
+                }
             }
-
-            Logger::log("Parsed words: " + std::to_string(words.size()));
 
             auto results = db.getRankedDocuments(words);
 
-            std::ostringstream responseStream;
-            responseStream << "<html><body><h1>Search Results</h1><ul>";
-
-            for (const auto& [url, relevance] : results) {
-                responseStream << "<li><a href=\"" << url << "\">" << url << "</a> - Relevance: " << relevance << "</li>";
+            // Формируем HTML для результатов
+            if (results.empty()) {
+                resultsHtml = "<li>No results found.</li>";
             }
+            else {
+                for (const auto& [url, relevance] : results) {
+                    resultsHtml += "<li><a href=\"" + url + "\">" + url + "</a> - Relevance: " + std::to_string(relevance) + "</li>";
+                }
+            }
+        }
 
-            responseStream << "</ul></body></html>";
-            response_.result(http::status::ok);
-            response_.set(http::field::content_type, "text/html");
-            response_.body() = responseStream.str();
+        // Заменяем плейсхолдеры в шаблоне
+        size_t posQuery = htmlContent.find("{{query}}");
+        if (posQuery != std::string::npos) {
+            htmlContent.replace(posQuery, 9, query);
         }
-        else {
-            response_.result(http::status::method_not_allowed);
-            response_.body() = "<html><body><h1>405 Method Not Allowed</h1></body></html>";
+
+        size_t posResults = htmlContent.find("{{results}}");
+        if (posResults != std::string::npos) {
+            htmlContent.replace(posResults, 11, resultsHtml);
         }
+
+        // Возвращаем обновлённый HTML
+        response_.result(http::status::ok);
+        response_.set(http::field::content_type, "text/html");
+        response_.body() = htmlContent;
 
         writeResponse();
     }
