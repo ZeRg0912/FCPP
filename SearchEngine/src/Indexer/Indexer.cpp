@@ -40,12 +40,11 @@
         // Удаление всех HTML-тегов
         wText = std::regex_replace(wText, std::wregex(L"<[^>]*>"), L" ");
 
-        // Удаление HTML-сущностей (&nbsp;, &lt;, &gt;)
-        wText = std::regex_replace(wText, std::wregex(L"&[a-zA-Z0-9#]+;"), L" ");
+        // Удаление JSON и HTML-атрибутов
+        wText = std::regex_replace(wText, std::wregex(L"[\"{\\}\\[\\]:]+"), L" ");
 
-        // Удаление CSS-значений
-        wText = std::regex_replace(wText, std::wregex(L"\\b[0-9]+(px|em|rem|%)\\b", std::regex_constants::icase), L" ");
-        wText = std::regex_replace(wText, std::wregex(L"\\bhsla?\\([^\\)]*\\)\\b", std::regex_constants::icase), L" ");
+        // Удаление слов с подчёркиванием или других технических конструкций
+        wText = std::regex_replace(wText, std::wregex(L"\\b[a-zA-Z0-9_]+_[a-zA-Z0-9_]+\\b"), L" ");
 
         // Замена всех ненужных символов
         wText = std::regex_replace(wText, std::wregex(L"[^\\w\\s-]"), L" ");

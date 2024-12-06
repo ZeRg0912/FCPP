@@ -73,6 +73,13 @@ void Application::ConsoleSearch() {
 
             if (query == "/exit_search") break;
 
+            // Проверка на пустой запрос
+            if (query.empty()) {
+                Logger::logError("Query cannot be empty.");
+                std::cout << "Query cannot be empty. Please enter a valid search query." << std::endl;
+                continue; // Возвращаемся к следующему запросу
+            }
+
             std::istringstream stream(query);
             std::vector<std::string> words;
             std::string word;
@@ -80,6 +87,7 @@ void Application::ConsoleSearch() {
                 words.push_back(word);
             }
 
+            // Получаем результаты из базы данных
             auto results = db.getRankedDocuments(words);
 
             if (results.empty()) {
@@ -104,11 +112,16 @@ void Application::ConsoleSearch() {
     }
 }
 
+
 void Application::HTMLSearch() {
     try {
-        Logger::log("Starting Search Engine only. Access it at: http://localhost:" + config.get("server.server_port"));
-
         serverThread = std::thread(&SearchEngine::run, searchEngine.get());
+        Logger::log("Starting Search. Access it at: http://localhost:" + config.get("server.server_port"));
+
+        Logger::log("Press Enter to stop the server...");
+        std::cin.get();
+
+        searchEngine->stop();
 
         if (serverThread.joinable()) {
             serverThread.join();

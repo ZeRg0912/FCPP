@@ -33,9 +33,9 @@ SearchEngine::SearchEngine(Database& db, int port)
 
 void SearchEngine::run() {
     try {
-        Logger::log("Search engine running on port " + std::to_string(port));
-        doAccept(); // Начинаем ожидать подключения
-        ioContext.run(); // Обрабатываем все асинхронные задачи в одном потоке
+        //Logger::log("Search engine running on port " + std::to_string(port));
+        doAccept();
+        ioContext.run();
     }
     catch (const std::exception& e) {
         Logger::logError("Error in run method: " + std::string(e.what()));
@@ -44,14 +44,14 @@ void SearchEngine::run() {
 
 void SearchEngine::doAccept() {
     if (!acceptor.is_open()) {
-        Logger::log("Acceptor is closed. Stopping doAccept.");
-        return; // Прекращаем попытки принять соединение, если acceptor закрыт
+        //Logger::log("Acceptor is closed. Stopping doAccept.");
+        return;
     }
 
     acceptor.async_accept(socket_, [this](beast::error_code ec) {
         try {
             if (!ec) {
-                Logger::log("Accepted connection.");
+                //Logger::log("Accepted connection.");
                 readRequest(); // Обработка запроса
                 checkDeadline(); // Проверка таймера
             }
@@ -101,7 +101,7 @@ void SearchEngine::checkDeadline() {
     auto self = shared_from_this();
 
     deadline_.expires_after(std::chrono::seconds(5));
-    Logger::log("Deadline set for 5 seconds.");
+    //Logger::log("Deadline set for 5 seconds.");
 
     deadline_.async_wait([self](beast::error_code ec) {
         try {
@@ -111,7 +111,7 @@ void SearchEngine::checkDeadline() {
                 self->socket_.close(close_ec);
             }
             else {
-                Logger::log("Deadline timer cancelled.");
+                //Logger::log("Deadline timer cancelled.");
             }
         }
         catch (const std::exception& e) {
@@ -128,14 +128,14 @@ void SearchEngine::writeResponse() {
     http::async_write(socket_, response_, [self](beast::error_code ec, std::size_t) {
         try {
             if (!ec) {
-                Logger::log("Response sent successfully.");
-                self->readRequest(); // Переходим к следующему запросу на том же сокете
+                //Logger::log("Response sent successfully.");
+                self->readRequest();
             }
             else {
                 Logger::logError("Error sending response: " + ec.message());
-                self->socket_.close(); // Закрываем сокет при ошибке
+                self->socket_.close();
             }
-            self->deadline_.cancel(); // Остановка таймера
+            self->deadline_.cancel();
         }
         catch (const std::exception& e) {
             Logger::logError("Exception in writeResponse: " + std::string(e.what()));
@@ -152,7 +152,7 @@ void SearchEngine::readRequest() {
         boost::ignore_unused(bytes_transferred);
         if (!ec) {
             try {
-                Logger::log("Request read successfully.");
+                //Logger::log("Request read successfully.");
                 self->processRequest();
             }
             catch (const std::exception& e) {
@@ -167,9 +167,9 @@ void SearchEngine::readRequest() {
 
 void SearchEngine::processRequest() {
     try {
-        Logger::log("Processing HTTP request...");
-        Logger::log("Request method: " + std::to_string(static_cast<int>(request_.method())));
-        Logger::log("Request target: " + std::string(request_.target()));
+        //Logger::log("Processing HTTP request...");
+        //Logger::log("Request method: " + std::to_string(static_cast<int>(request_.method())));
+        //Logger::log("Request target: " + std::string(request_.target()));
 
         std::string htmlContent;
         std::string query;
@@ -187,8 +187,8 @@ void SearchEngine::processRequest() {
         htmlContent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
         if (request_.method() == http::verb::post) {
-            Logger::log("POST request received. Processing search query...");
-            Logger::log("Request body: " + request_.body());
+            //Logger::log("POST request received. Processing search query...");
+            //Logger::log("Request body: " + request_.body());
 
             // Извлечение параметра query
             std::string body = request_.body();
@@ -196,7 +196,7 @@ void SearchEngine::processRequest() {
             if (pos != std::string::npos) {
                 query = body.substr(pos + 6);
                 query = URLDecode(query); // Декодируем URL-символы
-                Logger::log("Extracted query: " + query);
+                //Logger::log("Extracted query: " + query);
             }
 
             // Разбор запроса

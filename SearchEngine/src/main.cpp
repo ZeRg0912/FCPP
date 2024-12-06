@@ -14,7 +14,11 @@ int main() {
         #ifdef FULL_PROJECT_MODE
         app.run();
         #else
-        app.ConsoleSearch();
+            #ifdef CONSOLE_SEARCH_MODE
+            app.ConsoleSearch();
+            #else
+            app.HTMLSearch();
+            #endif
         #endif
 
         return 0;

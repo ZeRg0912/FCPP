@@ -55,6 +55,8 @@ set(HEADERS
 
 add_executable(SpiderSearchEngine ${SOURCES} ${HEADERS})
 target_compile_definitions(SpiderSearchEngine PRIVATE FULL_PROJECT_MODE)
+add_executable(ConsoleSearchOnly         ${SOURCES} ${HEADERS})
+target_compile_definitions(ConsoleSearchOnly PRIVATE CONSOLE_SEARCH_MODE)
 add_executable(SearchOnly         ${SOURCES} ${HEADERS})
 
 # ------------------------------------------------------------------------
@@ -71,6 +73,7 @@ set (LIBPQXX_DIR "${LIBS_DIR}/libpqxx-7.9.2")
 add_subdirectory(${LIBPQXX_DIR} build_libpqxx)
 
 target_link_libraries(SpiderSearchEngine PRIVATE pqxx)
+target_link_libraries(ConsoleSearchOnly PRIVATE pqxx)
 target_link_libraries(SearchOnly PRIVATE pqxx)
 
 # -----------------------------------------------------------------------------
@@ -84,7 +87,10 @@ find_package(Boost REQUIRED)
 if (Boost_FOUND)
     target_include_directories(SpiderSearchEngine PRIVATE ${Boost_INCLUDE_DIRS})
     target_link_directories(SpiderSearchEngine PRIVATE ${BOOST_LIBRARYDIR})
-
+    
+    target_include_directories(ConsoleSearchOnly PRIVATE ${Boost_INCLUDE_DIRS})
+    target_link_directories(ConsoleSearchOnly PRIVATE ${BOOST_LIBRARYDIR})
+    
     target_include_directories(SearchOnly PRIVATE ${Boost_INCLUDE_DIRS})
     target_link_directories(SearchOnly PRIVATE ${BOOST_LIBRARYDIR})
 else()
@@ -99,6 +105,9 @@ find_package(OpenSSL REQUIRED)
 if (OpenSSL_FOUND)
     target_include_directories(SpiderSearchEngine PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SpiderSearchEngine PRIVATE ${OPENSSL_LIBRARIES})
+
+    target_include_directories(ConsoleSearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(ConsoleSearchOnly PRIVATE ${OPENSSL_LIBRARIES})
     
     target_include_directories(SearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SearchOnly PRIVATE ${OPENSSL_LIBRARIES})
@@ -108,6 +117,9 @@ else()
     set(OPENSSL_SSL_LIBRARY "${EXT_OPENSSL_DIR}/lib/VC/x64/MDd/libssl.lib")
     target_include_directories(SpiderSearchEngine PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SpiderSearchEngine PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+    
+    target_include_directories(ConsoleSearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(ConsoleSearchOnly PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
     
     target_include_directories(SearchOnly PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(SearchOnly PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
@@ -127,9 +139,15 @@ add_custom_command(
 )
 
 add_custom_command(
-    TARGET SpiderSearchEngine POST_BUILD
+    TARGET ConsoleSearchOnly POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${HTML_FILE} $<TARGET_FILE_DIR:SpiderSearchEngine>
+        ${CONFIG_FILE} $<TARGET_FILE_DIR:ConsoleSearchOnly>
+)
+
+add_custom_command(
+    TARGET SearchOnly POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CONFIG_FILE} $<TARGET_FILE_DIR:SearchOnly>
 )
 
 # -----------------------------------------------------------------------------
