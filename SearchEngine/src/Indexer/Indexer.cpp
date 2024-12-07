@@ -24,9 +24,6 @@
     }
 
     std::string Indexer::removeHtmlTags(const std::string& HTMLContent) {
-        // Устанавливаем локаль для обработки Unicode
-        //std::locale::global(std::locale("ru_RU.UTF-8"));
-
         // Конвертация строки из UTF-8 в wstring
         std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
         std::wstring wText = converter.from_bytes(HTMLContent);

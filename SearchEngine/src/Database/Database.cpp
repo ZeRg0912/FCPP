@@ -109,7 +109,7 @@ std::vector<std::pair<std::string, int>> Database::getRankedDocuments(const std:
         pqxx::connection connection(connectionString);
         pqxx::work txn(connection);
 
-        // Формируем запрос с использованием IN
+        // Формируем запрос
         std::ostringstream query;
         query << "SELECT d.url, SUM(w.frequency) AS total_relevance "
             << "FROM documents d "

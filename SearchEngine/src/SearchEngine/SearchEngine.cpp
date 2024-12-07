@@ -10,13 +10,13 @@ std::string URLDecode(const std::string& encoded) {
                 int hex = 0;
                 std::istringstream(encoded.substr(i + 1, 2)) >> std::hex >> hex;
                 res += static_cast<char>(hex);
-                i += 3; // Пропускаем '%xx'
+                i += 3;
             } else {
                 res += '%';
                 i++;
             }
         } else if (encoded[i] == '+') {
-            res += ' '; // '+' в URL-кодировке означает пробел
+            res += ' ';
             i++;
         } else {
             res += encoded[i];
@@ -52,20 +52,18 @@ void SearchEngine::doAccept() {
         try {
             if (!ec) {
                 //Logger::log("Accepted connection.");
-                readRequest(); // Обработка запроса
-                checkDeadline(); // Проверка таймера
+                readRequest();
+                checkDeadline();
             }
             else {
-                // Если ошибка является обычной (например, соединение не было установлено), считаем её инфо
                 if (ec == net::error::operation_aborted) {
                     Logger::log("Accept operation was aborted (likely due to shutdown).");
                 }
                 else {
-                    // Логируем как информационную ошибку, если это просто отсутствие нового подключения
                     //Logger::logInfo("No new connections. Error accepting connection: " + ec.message());
                 }
             }
-            doAccept(); // Повторный вызов для принятия новых соединений
+            doAccept();
         }
         catch (const std::exception& e) {
             Logger::logError("Exception in accept handler: " + std::string(e.what()));
@@ -83,13 +81,11 @@ void SearchEngine::stop() {
         Logger::log("Stopping Search Engine...");
         beast::error_code ec;
 
-        // Закрываем acceptor
         acceptor.close(ec);
         if (ec) {
             Logger::logError("Error closing acceptor: " + ec.message());
         }
 
-        // Завершаем io_context
         ioContext.stop();
     }
     catch (const std::exception& e) {
@@ -228,7 +224,6 @@ void SearchEngine::processRequest() {
             }
         }
 
-        // Заменяем плейсхолдеры в шаблоне
         size_t posQuery = htmlContent.find("{{query}}");
         if (posQuery != std::string::npos) {
             htmlContent.replace(posQuery, 9, query);
@@ -239,7 +234,6 @@ void SearchEngine::processRequest() {
             htmlContent.replace(posResults, 11, resultsHtml);
         }
 
-        // Возвращаем обновлённый HTML
         response_.result(http::status::ok);
         response_.set(http::field::content_type, "text/html");
         response_.body() = htmlContent;

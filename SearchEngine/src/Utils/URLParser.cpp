@@ -24,7 +24,6 @@ std::vector<std::string> URLParser::extractLinks(const std::string& content, con
     for (auto it = begin; it != end; ++it) {
         std::string link = (*it)[1].str();
 
-        // Если ссылка относительная, преобразуем её в абсолютную
         if (link.find("http://") != 0 && link.find("https://") != 0) {
             if (link.front() == '/') {
                 ParsedURL baseParsed = parse(baseUrl);
@@ -35,7 +34,6 @@ std::vector<std::string> URLParser::extractLinks(const std::string& content, con
             }
         }
 
-        // Убираем '/' в конце ссылки, если он есть
         if (!link.empty() && link.back() == '/') {
             link.pop_back();
         }
