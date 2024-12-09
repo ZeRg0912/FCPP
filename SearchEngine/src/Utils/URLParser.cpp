@@ -24,6 +24,16 @@ std::vector<std::string> URLParser::extractLinks(const std::string& content, con
     for (auto it = begin; it != end; ++it) {
         std::string link = (*it)[1].str();
 
+        // Удаляем фрагмент ссылки (начинается с #)
+        size_t hashPos = link.find('#');
+        if (hashPos != std::string::npos) {
+            link = link.substr(0, hashPos);
+        }
+
+        if (link.empty()) {
+            continue;
+        }
+
         if (link.find("http://") != 0 && link.find("https://") != 0) {
             if (link.front() == '/') {
                 ParsedURL baseParsed = parse(baseUrl);

@@ -193,6 +193,24 @@ void SearchEngine::processRequest() {
                 query = body.substr(pos + 6);
                 query = URLDecode(query); // Декодируем URL-символы
                 //Logger::log("Extracted query: " + query);
+
+                try {
+                    // Конвертируем string в wstring
+                    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+                    std::wstring wideQuery = converter.from_bytes(query);
+
+                    // Приводим к нижнему регистру
+                    std::locale loc("ru_RU.UTF-8");
+                    for (auto& ch : wideQuery) {
+                        ch = std::tolower(ch, loc);
+                    }
+
+                    // Конвертируем обратно в string
+                    query = converter.to_bytes(wideQuery);
+                }
+                catch (const std::exception& e) {
+                    Logger::logError("Error converting query to lowercase: " + std::string(e.what()));
+                }
             }
 
             // Разбор запроса
